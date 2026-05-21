@@ -383,3 +383,6 @@ target
 
 .vscode
 .mypy*
+may-2026/devops/quickstart/.deploy.env
+may-2026/devops/quickstart/.deploy.env.example
+may-2026/devops/quickstart/infra/
