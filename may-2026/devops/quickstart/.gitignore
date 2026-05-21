@@ -1,5 +1,6 @@
 # iii unifying backend engine files
 .env
+.deploy.env
 data/
 
 # Byte-compiled / optimized / DLL files

@@ -1,0 +1,23 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+bootcmd:
+  - mkdir -p /etc/alchemyst
+write_files:
+  - path: /etc/alchemyst/stack.env
+    permissions: '0644'
+    content: |
+      PROJECT_ROOT=/opt/alchemyst-hiring/may-2026/devops/quickstart
+      III_BRIDGE_PORT=${iii_bridge_port}
+      III_HTTP_PORT=${iii_http_port}
+      III_ENGINE_PRIVATE_HOST=${api_private_ip}
+  - path: /etc/alchemyst/caller-worker.env
+    permissions: '0644'
+    content: |
+      III_URL=ws://${api_private_ip}:${iii_bridge_port}
+      MODEL_NAME=quickstart-slm
+runcmd:
+  - bash -lc 'set -euo pipefail; if [ ! -d /opt/alchemyst-hiring/.git ]; then git clone ${repo_clone_url} /opt/alchemyst-hiring; fi; git -C /opt/alchemyst-hiring fetch --all --tags; git -C /opt/alchemyst-hiring checkout ${repo_ref}; bash /opt/alchemyst-hiring/may-2026/devops/quickstart/deploy/scripts/bootstrap-caller-worker.sh'

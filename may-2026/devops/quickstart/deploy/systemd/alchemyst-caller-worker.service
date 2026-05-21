@@ -1,0 +1,18 @@
+[Unit]
+Description=Alchemyst caller worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alchemyst
+Group=alchemyst
+WorkingDirectory=/opt/alchemyst-hiring/may-2026/devops/quickstart/workers/caller-worker
+EnvironmentFile=/etc/alchemyst/stack.env
+EnvironmentFile=/etc/alchemyst/caller-worker.env
+ExecStart=/usr/local/bin/run-caller-worker.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

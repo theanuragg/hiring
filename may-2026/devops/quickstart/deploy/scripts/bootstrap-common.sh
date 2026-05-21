@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly APP_USER="alchemyst"
+readonly APP_GROUP="alchemyst"
+readonly REPO_DIR="/opt/alchemyst-hiring"
+readonly PROJECT_ROOT="/opt/alchemyst-hiring/may-2026/devops/quickstart"
+readonly VENV_ROOT="/opt/alchemyst-venvs"
+
+export DEBIAN_FRONTEND=noninteractive
+
+log() {
+  printf '[%s] %s\n' "$(date -Iseconds)" "$*"
+}
+
+require_root() {
+  if [[ "${EUID}" -ne 0 ]]; then
+    echo "This script must run as root" >&2
+    exit 1
+  fi
+}
+
+ensure_app_user() {
+  if ! id -u "${APP_USER}" >/dev/null 2>&1; then
+    useradd --system --create-home --shell /bin/bash "${APP_USER}"
+  fi
+}
+
+install_base_packages() {
+  apt-get update
+  apt-get install -y \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    jq \
+    python3 \
+    python3-pip \
+    python3-venv
+}
+
+install_nodejs() {
+  if command -v node >/dev/null 2>&1; then
+    return
+  fi
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  apt-get install -y nodejs
+}
+
+install_iii_engine() {
+  if command -v iii >/dev/null 2>&1; then
+    return
+  fi
+  BIN_DIR=/usr/local/bin curl -fsSL https://install.iii.dev/iii/main/install.sh | sh -s -- v0.11.3
+}
+
+ensure_repo_present() {
+  if [[ ! -d "${PROJECT_ROOT}" ]]; then
+    echo "Expected project root ${PROJECT_ROOT} to exist after cloud-init clone" >&2
+    exit 1
+  fi
+  chown -R "${APP_USER}:${APP_GROUP}" "${REPO_DIR}"
+}
+
+ensure_runtime_dirs() {
+  mkdir -p /etc/alchemyst /etc/iii /var/log/alchemyst "${VENV_ROOT}" /var/cache/huggingface
+  chown -R "${APP_USER}:${APP_GROUP}" /var/log/alchemyst /var/cache/huggingface "${VENV_ROOT}"
+}
+
+create_python_venv() {
+  local venv_path="$1"
+  local requirements_file="$2"
+  python3 -m venv "${venv_path}"
+  "${venv_path}/bin/pip" install --upgrade pip setuptools wheel
+  "${venv_path}/bin/pip" install -r "${requirements_file}"
+  chown -R "${APP_USER}:${APP_GROUP}" "${venv_path}"
+}
+
+install_systemd_unit() {
+  install -D -m 0644 "$1" "/etc/systemd/system/$2"
+}
+
+install_executable() {
+  install -D -m 0755 "$1" "$2"
+}

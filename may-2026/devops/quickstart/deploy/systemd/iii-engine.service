@@ -1,0 +1,17 @@
+[Unit]
+Description=iii orchestration engine
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alchemyst
+Group=alchemyst
+WorkingDirectory=/opt/alchemyst-hiring/may-2026/devops/quickstart
+ExecStart=/usr/local/bin/iii --config /etc/iii/config.yaml
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
