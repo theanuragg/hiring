@@ -1,5 +1,4 @@
 # iii unifying backend engine files
-.env
 data/
 
 # Byte-compiled / optimized / DLL files
@@ -286,7 +285,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env.*
 !.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -386,3 +384,4 @@ target
 may-2026/devops/quickstart/.deploy.env
 may-2026/devops/quickstart/.deploy.env.example
 may-2026/devops/quickstart/infra/
+config.bat

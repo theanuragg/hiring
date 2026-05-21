@@ -36,25 +36,28 @@ Personal deploy steps: **[plan.md](./plan.md)**
 
 ```mermaid
 flowchart LR
-  classDef external fill:#f4f4f5,stroke:#71717a,stroke-width:2px
-  classDef gateway fill:#dbeafe,stroke:#2563eb,stroke-width:2px
-  classDef worker fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-
-  CLIENT((Client)):::external
+  CLIENT([Client])
 
   subgraph PUBLIC["Public edge"]
-    GW[["api-gateway<br/>Caddy · FastAPI · iii"]]:::gateway
+    GW[api-gateway<br/>Caddy · FastAPI · iii]
   end
 
   subgraph VPC["VPC 10.20.0.0/16"]
     direction TB
-    CALL[["caller-worker"]]:::worker
-    INF[["inference-worker"]]:::worker
+    CALL[caller-worker]
+    INF[inference-worker]
   end
 
-  CLIENT ==>|HTTP 80| GW
+  CLIENT -->|HTTP 80| GW
   GW <-->|WS 49134| CALL
   GW <-->|WS 49134| INF
+
+  style CLIENT fill:#e2e8f0,stroke:#94a3b8,color:#1e293b
+  style GW     fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style CALL   fill:#d1fae5,stroke:#10b981,color:#064e3b
+  style INF    fill:#d1fae5,stroke:#10b981,color:#064e3b
+  style PUBLIC fill:#eff6ff,stroke:#93c5fd,color:#1e3a5f
+  style VPC    fill:#f0fdf4,stroke:#86efac,color:#064e3b
 ```
 
 Only **api-gateway** has a public IP. Workers use `public_networking = false`.
@@ -64,20 +67,20 @@ Only **api-gateway** has a public IP. Workers use `public_networking = false`.
 ```mermaid
 sequenceDiagram
   autonumber
-  box Public edge
+  box rgb(239,246,255) Public edge
     participant C as Client
     participant G as api-gateway
   end
-  box VPC private
+  box rgb(240,253,244) VPC private
     participant W as caller-worker
     participant I as inference-worker
   end
-  C->>G: POST infer
+  C->>G: POST /infer
   G->>W: trigger get_response
   W->>I: trigger run_inference
   I-->>W: completion
   W-->>G: result
-  G-->>C: JSON
+  G-->>C: JSON response
 ```
 
 ---
@@ -209,10 +212,12 @@ journalctl -u iii-engine -u alchemyst-api -u caddy -f
 
 ## Production hardening
 
-Before production I would add TLS termination (DO Load Balancer or Caddy with a real domain and ACME), API authentication and per-tenant rate limits, and move secrets off disk into a managed secret store. 
+Before production I would add TLS termination (DO Load Balancer or Caddy with a real domain and ACME), API authentication and per-tenant rate limits, and move secrets off disk into a managed secret store.
 
 ### Observability & Logging
+
 For a production-grade mesh, I would implement a centralized observability stack:
+
 - **Logging**: Deploy `Promtail` on each VM to ship systemd journal logs to a central **Loki** instance. This allows querying logs across the gateway, caller, and inference workers using a single Trace ID.
 - **Metrics**: Export `iii-engine` and FastAPI metrics to **Prometheus**, visualized via **Grafana** dashboards.
 - **Tracing**: Instrument the Python and TypeScript workers with **OpenTelemetry** to visualize request spans and identify RPC bottlenecks in the mesh.
