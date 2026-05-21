@@ -48,10 +48,21 @@ install_nodejs() {
 }
 
 install_iii_engine() {
-  if command -v iii >/dev/null 2>&1; then
+  if [[ -x /usr/local/bin/iii ]]; then
     return
   fi
   BIN_DIR=/usr/local/bin curl -fsSL https://install.iii.dev/iii/main/install.sh | sh -s -- v0.11.3
+  # Installer may place binaries under ~/.local/bin when run as root.
+  for candidate in /usr/local/bin/iii /root/.local/bin/iii; do
+    if [[ -x "${candidate}" ]]; then
+      install -m 0755 "${candidate}" /usr/local/bin/iii
+      break
+    fi
+  done
+  if [[ ! -x /usr/local/bin/iii ]]; then
+    echo "iii binary not found after install" >&2
+    exit 1
+  fi
 }
 
 ensure_repo_present() {

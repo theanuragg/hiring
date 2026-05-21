@@ -3,6 +3,7 @@ Description=Alchemyst JSON API gateway
 Requires=iii-engine.service
 After=network-online.target iii-engine.service
 Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -11,9 +12,12 @@ Group=alchemyst
 WorkingDirectory=/opt/alchemyst-hiring/may-2026/devops/quickstart/app/api-gateway
 EnvironmentFile=/etc/alchemyst/stack.env
 EnvironmentFile=/etc/alchemyst/api-gateway.env
+ExecStartPre=/bin/sleep 3
 ExecStart=/usr/local/bin/run-api-gateway.sh
 Restart=on-failure
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

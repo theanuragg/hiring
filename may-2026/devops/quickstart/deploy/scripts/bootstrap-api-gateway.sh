@@ -31,6 +31,13 @@ install -D -m 0644 "${PROJECT_ROOT}/deploy/iii/engine-config.yaml" /etc/iii/conf
 install -D -m 0644 "${PROJECT_ROOT}/deploy/caddy/Caddyfile" /etc/caddy/Caddyfile
 
 systemctl daemon-reload
-systemctl enable --now iii-engine.service
-systemctl enable --now alchemyst-api.service
-systemctl enable --now caddy.service
+systemctl enable iii-engine.service alchemyst-api.service caddy.service
+systemctl restart iii-engine.service
+systemctl restart alchemyst-api.service
+systemctl restart caddy.service
+
+sleep 2
+echo "--- local checks ---"
+curl -sf http://127.0.0.1:8000/healthz && echo " FastAPI ok" || echo " FastAPI FAILED — journalctl -u alchemyst-api"
+curl -sf http://127.0.0.1/healthz && echo " Caddy ok" || echo " Caddy FAILED — journalctl -u caddy"
+systemctl is-active iii-engine alchemyst-api caddy || true

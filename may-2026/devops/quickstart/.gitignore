@@ -384,3 +384,6 @@ target
 
 .vscode
 .mypy*
+infra/terraform.tfvars
+infra/terraform.tfvars.example
+infra/terraform.tfstate*

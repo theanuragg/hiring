@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -17,13 +18,25 @@ logger = logging.getLogger("api-gateway")
 
 MODEL_NAME = os.getenv("MODEL_NAME", "quickstart-slm")
 CALLER_FUNCTION_ID = os.getenv("CALLER_FUNCTION_ID", "inference::get_response")
+III_URL = os.getenv("III_URL", "ws://127.0.0.1:49134")
 
-iii = register_worker(
-    os.getenv("III_URL", "ws://127.0.0.1:49134"),
-    InitOptions(worker_name=os.getenv("III_WORKER_NAME", "api-gateway")),
-)
+iii_client: Any = None
 
-app = FastAPI(title="Alchemyst Quickstart API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global iii_client
+    logger.info("connecting api-gateway worker to iii at %s", III_URL)
+    iii_client = register_worker(
+        III_URL,
+        InitOptions(worker_name=os.getenv("III_WORKER_NAME", "api-gateway")),
+    )
+    logger.info("api-gateway connected to iii engine")
+    yield
+    iii_client = None
+
+
+app = FastAPI(title="Alchemyst Quickstart API", version="1.0.0", lifespan=lifespan)
 
 
 class InferRequest(BaseModel):
@@ -54,6 +67,9 @@ def healthz() -> dict[str, str]:
 
 @app.post("/infer", response_model=InferResponse)
 def infer(request: InferRequest) -> InferResponse:
+    if iii_client is None:
+        raise HTTPException(status_code=503, detail="iii engine not connected")
+
     trace_id = str(uuid.uuid4())
     started_at = time.perf_counter()
     payload = {
@@ -69,7 +85,7 @@ def infer(request: InferRequest) -> InferResponse:
     log_event(logging.INFO, "infer_request_received", trace_id=trace_id)
 
     try:
-        result = iii.trigger(
+        result = iii_client.trigger(
             {
                 "function_id": CALLER_FUNCTION_ID,
                 "payload": payload,
