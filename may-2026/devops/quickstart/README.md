@@ -209,7 +209,15 @@ journalctl -u iii-engine -u alchemyst-api -u caddy -f
 
 ## Production hardening
 
-Before production I would add TLS termination (DO Load Balancer or Caddy with a real domain and ACME), API authentication and per-tenant rate limits, and move secrets off disk into a managed secret store. Observability would use centralized logs (e.g. Loki), metrics (Prometheus), and OpenTelemetry traces exported to a backend. Deployments would use health-checked rolling updates, infrastructure drift detection, and regular image patching.
+Before production I would add TLS termination (DO Load Balancer or Caddy with a real domain and ACME), API authentication and per-tenant rate limits, and move secrets off disk into a managed secret store. 
+
+### Observability & Logging
+For a production-grade mesh, I would implement a centralized observability stack:
+- **Logging**: Deploy `Promtail` on each VM to ship systemd journal logs to a central **Loki** instance. This allows querying logs across the gateway, caller, and inference workers using a single Trace ID.
+- **Metrics**: Export `iii-engine` and FastAPI metrics to **Prometheus**, visualized via **Grafana** dashboards.
+- **Tracing**: Instrument the Python and TypeScript workers with **OpenTelemetry** to visualize request spans and identify RPC bottlenecks in the mesh.
+
+Deployments would use health-checked rolling updates, infrastructure drift detection, and regular image patching.
 
 SSH would be restricted further (no direct root, short-lived certs, or console-only access). Network policies would be reviewed quarterly, and egress from workers would be limited to required endpoints only.
 

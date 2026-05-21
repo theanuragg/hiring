@@ -9,6 +9,7 @@ install_nodejs
 ensure_app_user
 ensure_repo_present
 ensure_runtime_dirs
+harden_ssh
 
 cd "${PROJECT_ROOT}/workers/caller-worker"
 npm ci

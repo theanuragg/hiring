@@ -34,6 +34,7 @@ install_base_packages() {
     curl \
     git \
     jq \
+    netcat-openbsd \
     python3 \
     python3-pip \
     python3-venv
@@ -51,10 +52,13 @@ install_iii_engine() {
   if [[ -x /usr/local/bin/iii ]]; then
     return
   fi
+  # Set HOME to /root for the installer to prevent sh errors
+  export HOME=/root
   BIN_DIR=/usr/local/bin curl -fsSL https://install.iii.dev/iii/main/install.sh | sh -s -- v0.11.3
   # Installer may place binaries under ~/.local/bin when run as root.
-  for candidate in /usr/local/bin/iii /root/.local/bin/iii; do
+  for candidate in /usr/local/bin/iii /root/.local/bin/iii /root/bin/iii; do
     if [[ -x "${candidate}" ]]; then
+      log "Installing iii from ${candidate}"
       install -m 0755 "${candidate}" /usr/local/bin/iii
       break
     fi
@@ -93,4 +97,13 @@ install_systemd_unit() {
 
 install_executable() {
   install -D -m 0755 "$1" "$2"
+}
+
+harden_ssh() {
+  log "Hardening SSH configuration..."
+  # Disable root password login, but allow key-based root for now (as Terraform needs it)
+  # In a real senior setup, we'd transition to a deploy user entirely.
+  sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
+  sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/g' /etc/ssh/sshd_config
+  systemctl restart ssh
 }

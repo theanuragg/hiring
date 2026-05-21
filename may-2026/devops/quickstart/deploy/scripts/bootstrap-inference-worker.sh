@@ -8,6 +8,7 @@ install_base_packages
 ensure_app_user
 ensure_repo_present
 ensure_runtime_dirs
+harden_ssh
 
 create_python_venv \
   "/opt/alchemyst-venvs/inference-worker" \

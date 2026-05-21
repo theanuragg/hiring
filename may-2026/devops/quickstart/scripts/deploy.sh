@@ -65,4 +65,9 @@ fi
 echo ""
 terraform output
 echo ""
-echo "Wait 10-20 min, then: ${ROOT}/scripts/test-api.sh"
+
+chmod +x "${ROOT}/scripts/validate-deploy.sh"
+"${ROOT}/scripts/validate-deploy.sh"
+
+echo ""
+echo "Deployment complete and verified!"

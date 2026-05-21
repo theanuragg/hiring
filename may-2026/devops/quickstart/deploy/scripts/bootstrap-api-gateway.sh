@@ -9,6 +9,7 @@ install_iii_engine
 ensure_app_user
 ensure_repo_present
 ensure_runtime_dirs
+harden_ssh
 
 apt-get install -y caddy
 
